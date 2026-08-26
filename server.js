@@ -1,6 +1,6 @@
 const express = require("express");
 const taskRoutes = require("./routes/tasks");
-const { type } = require('node:os');
+
 const app = express();
 const PORT = 5000;
 

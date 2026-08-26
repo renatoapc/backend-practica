@@ -1,24 +1,33 @@
-const taskModel = require("../models/taskModel");
 
-const getTasks = (req, res) => {
-    const tasks = taskModel.getAllTasks();
+const taskService = require("../services/taskService");
 
-    res.json(tasks);
+const getTasks = async (req, res) => {
+    try {
+        const tasks = await taskService.getAllTasks();
+
+        res.json(tasks);
+    } catch (error) {
+        res.status(500).json({ message: "Error interno del servidor" });
+    }
 };
 
-const createTask = (req, res) => {
+const createTask = async (req, res) => {
     const text = req.body.text;
 
     if (!text || text.trim() === "") {
         return res.status(400).json({ message: "El texto es obligatorio" });
     }
     
-    const task = taskModel.createTask(text.trim());
+    const task = await taskService.createTask(text.trim());
+
+    if (!task) {
+        return res.status(409).json({ message: "La tarea ya existe" });
+    }
     
     res.status(201).json(task);
 };
 
-const updateTask = (req, res) => {
+const updateTask = async (req, res) => {
     const id = Number(req.params.id);
 
     if (Number.isNaN(id)) {
@@ -45,23 +54,27 @@ const updateTask = (req, res) => {
         data.done = req.body.done;
     }
 
-    const updatedTask = taskModel.updateTask(id, data);
+    const result = await taskService.updateTask(id, data);
 
-    if (!updatedTask) {
+    if (result.error === "DUPLICATE_TASK") {
+        return res.status(409).json({ message: "La tarea ya existe" });
+    }
+
+    if (result.error === "TASK_NOT_FOUND") {
         return res.status(404).json({ message: "Tarea no encontrada" });
     }
 
-    res.json(updatedTask);
+    res.json(result.task);
 };
 
-const deleteTask = (req, res) => {
+const deleteTask = async (req, res) => {
     const id = Number(req.params.id);
 
     if (Number.isNaN(id)) {
         return res.status(400).json({ message: "El id debe ser un número" });
     }
 
-    const wasDeleted = taskModel.deleteTask(id);
+    const wasDeleted = await taskService.deleteTask(id);
 
     if (!wasDeleted) {
         return res.status(404).json({ message: "Tarea no encontrada" });
@@ -76,3 +89,5 @@ module.exports = {
     updateTask,
     deleteTask
 };
+
+

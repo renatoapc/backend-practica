@@ -1,51 +1,67 @@
-let tasks = [];
+const pool = require("../config/db");
 
-const getAllTasks = () => {
-    return tasks;
+const getAllTasks = async () => {
+    const result = await pool.query("SELECT * FROM tasks ORDER BY id ASC");
+
+    return result.rows;
 };
 
-const createTask = (text) => {
-    const task = {
-        id: Date.now(),
-        text,
-        done: false
-    };
+const createTask = async (text) => {
+    const result = await pool.query(
+        "INSERT INTO tasks (text) VALUES ($1) RETURNING *",
+        [text]
+    );
 
-    tasks.push(task);
-    return task;
+    return result.rows[0];
 };
 
-const findTaskById = (id) => {
-    return tasks.find(currentTask => currentTask.id === id);
+const findTaskById = async (id) => {
+    const result = await pool.query(
+        "SELECT * FROM tasks WHERE id = $1",
+        [id]
+    );
+
+    return result.rows[0];
 };
 
-const updateTask = (id, data) => {
-    const task = findTaskById(id);
-
-    if (!task) {
-        return null;
-    }
+const updateTask = async (id, data) => {
+    const fields = [];
+    const values = [];
+    let paramIndex = 1;
 
     if (data.text !== undefined) {
-        task.text = data.text;
+        fields.push(`text = $${paramIndex}`);
+        values.push(data.text);
+        paramIndex++;
     }
 
     if (data.done !== undefined) {
-        task.done = data.done;
+        fields.push(`done = $${paramIndex}`);
+        values.push(data.done);
+        paramIndex++;
     }
 
-    return task;
+    if (fields.length === 0) {
+        return findTaskById(id);
+    }
+
+    values.push(id);
+
+    const result = await pool.query(
+        `UPDATE tasks SET ${fields.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
+        values
+    );
+
+    return result.rows[0];
 };
 
-const deleteTask = (id) => {
-    const task = findTaskById(id);
+const deleteTask = async (id) => {
+    const result = await pool.query(
+        "DELETE FROM tasks WHERE id = $1 RETURNING *",
+        [id]
+    );
 
-    if (!task) {
-        return false;
-    }
-
-    tasks = tasks.filter(currentTask => currentTask.id !== id);
-    return true;
+    return result.rowCount > 0;
 };
 
 module.exports = {
