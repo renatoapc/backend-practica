@@ -1,30 +1,33 @@
 const pool = require("../config/db");
 
-const getAllTasks = async () => {
-    const result = await pool.query("SELECT * FROM tasks ORDER BY id ASC");
+const getAllTasks = async (userId) => {
+    const result = await pool.query(
+        "SELECT * FROM tasks WHERE user_id = $1 ORDER BY id ASC",
+        [userId]
+    );
 
     return result.rows;
 };
 
-const createTask = async (text) => {
+const createTask = async (text, userId) => {
     const result = await pool.query(
-        "INSERT INTO tasks (text) VALUES ($1) RETURNING *",
-        [text]
+        "INSERT INTO tasks (text, user_id) VALUES ($1, $2) RETURNING *",
+        [text, userId]
     );
 
     return result.rows[0];
 };
 
-const findTaskById = async (id) => {
+const findTaskById = async (id, userId) => {
     const result = await pool.query(
-        "SELECT * FROM tasks WHERE id = $1",
-        [id]
+        "SELECT * FROM tasks WHERE id = $1 AND user_id = $2",
+        [id, userId]
     );
 
     return result.rows[0];
 };
 
-const updateTask = async (id, data) => {
+const updateTask = async (id, data, userId) => {
     const fields = [];
     const values = [];
     let paramIndex = 1;
@@ -42,23 +45,24 @@ const updateTask = async (id, data) => {
     }
 
     if (fields.length === 0) {
-        return findTaskById(id);
+        return findTaskById(id, userId);
     }
 
     values.push(id);
+    values.push(userId);
 
     const result = await pool.query(
-        `UPDATE tasks SET ${fields.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
+        `UPDATE tasks SET ${fields.join(", ")} WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1} RETURNING *`,
         values
     );
 
     return result.rows[0];
 };
 
-const deleteTask = async (id) => {
+const deleteTask = async (id, userId) => {
     const result = await pool.query(
-        "DELETE FROM tasks WHERE id = $1 RETURNING *",
-        [id]
+        "DELETE FROM tasks WHERE id = $1 AND user_id = $2 RETURNING *",
+        [id, userId]
     );
 
     return result.rowCount > 0;

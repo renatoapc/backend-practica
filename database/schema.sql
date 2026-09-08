@@ -1,0 +1,15 @@
+
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id SERIAL PRIMARY KEY,
+    text VARCHAR(255) NOT NULL,
+    done BOOLEAN NOT NULL DEFAULT false,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    UNIQUE (user_id, text)
+);

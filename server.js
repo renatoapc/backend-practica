@@ -1,5 +1,6 @@
 const express = require("express");
 const taskRoutes = require("./routes/tasks");
+const authRoutes = require("./routes/auth");
 
 const app = express();
 const PORT = 5000;
@@ -11,6 +12,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/tasks", taskRoutes);
+app.use("/auth", authRoutes);
 
 
 
